@@ -155,6 +155,33 @@ func (f *FastTLD) Extract(e URLParams) (ExtractResult, error) {
 		netloc = netloc[atIdx+1:]
 	}
 
+	// Check for IPv6 address without brackets first
+	// We need to check this before the delimiter detection loop, because IPv6 addresses
+	// contain colons that would be misinterpreted as port separators
+	if len(netloc) > 0 && netloc[0] != '[' {
+		// Find where the host ends (path/query/fragment delimiters)
+		pathDelimiterIdx := indexAnyASCII(netloc, endOfHostWithPortDelimitersSet)
+		var potentialIPv6 string
+		if pathDelimiterIdx == -1 {
+			potentialIPv6 = netloc
+		} else {
+			potentialIPv6 = netloc[0:pathDelimiterIdx]
+		}
+
+		if isIPv6(potentialIPv6) {
+			// It's a valid IPv6 address without brackets
+			urlParts.HostType = IPv6
+			urlParts.Domain = potentialIPv6
+			urlParts.RegisteredDomain = potentialIPv6
+
+			// Extract path if present
+			if pathDelimiterIdx != -1 && pathDelimiterIdx != len(netloc) {
+				urlParts.Path = netloc[pathDelimiterIdx:]
+			}
+			return urlParts, nil
+		}
+	}
+
 	// Find square brackets (if any) and host end index
 	openingSquareBracketIdx := -1
 	closingSquareBracketIdx := -1
@@ -255,6 +282,14 @@ func (f *FastTLD) Extract(e URLParams) (ExtractResult, error) {
 	}
 
 	if urlParts.HostType == IPv6 {
+		return urlParts, nil
+	}
+
+	// Check for IPv6 address without brackets
+	if isIPv6(netloc) {
+		urlParts.HostType = IPv6
+		urlParts.Domain = netloc
+		urlParts.RegisteredDomain = netloc
 		return urlParts, nil
 	}
 

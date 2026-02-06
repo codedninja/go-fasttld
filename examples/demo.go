@@ -31,11 +31,18 @@ func main() {
 	color.New(fontStyle...).Println("IPv4 Address")
 	fasttld.PrintRes(url, res)
 
-	// IPv6 Address
+	// IPv6 Address with brackets
 	url = "https://[aBcD:ef01:2345:6789:aBcD:ef01:2345:6789]:5000"
 
 	res, _ = extractor.Extract(fasttld.URLParams{URL: url})
-	color.New(fontStyle...).Println("IPv6 Address")
+	color.New(fontStyle...).Println("IPv6 Address (with brackets)")
+	fasttld.PrintRes(url, res)
+
+	// IPv6 Address without brackets
+	url = "http://2001:db8::1/api/endpoint"
+
+	res, _ = extractor.Extract(fasttld.URLParams{URL: url})
+	color.New(fontStyle...).Println("IPv6 Address (without brackets)")
 	fasttld.PrintRes(url, res)
 
 	// Internationalised label separators
